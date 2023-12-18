@@ -23,6 +23,17 @@ def ff_ode_model(Y, T, params):
 
     return np.array([da_dt, dnot_a_dt, dq_dt, dnot_q_dt]) 
 
+# XOR gate model
+
+
+def xor_model(Y, T, params):
+    a1, not_a1, b1, not_b1, out = Y
+    alpha1, delta1, Kd, n = params
+
+    out = alpha1 * activate_2(a1 + b1, not_a1 + not_b1, Kd, n) - delta1 * out
+
+    return np.array([a1, not_a1, b1, not_b1, out])
+
 
 """
 JOHSON COUNTER MODELS 
