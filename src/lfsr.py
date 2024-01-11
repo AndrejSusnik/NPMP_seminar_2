@@ -9,8 +9,8 @@ import numpy as np
 """
 
 # simulation parameters
-t_end = 200
-N = 1000
+t_end = 300 * 2
+N = 1000 * 2
 
 
 # model parameters
@@ -23,31 +23,57 @@ delta2 = 0.69 # protein_degradation
 Kd = 10.44 # Kd
 n = 4.35 # hill
 
-params_ff = (alpha1, delta1, Kd, n)
-
+params_ff = (alpha1, alpha2, alpha3, alpha4, delta1, delta2, Kd, n)
 
 # three-bit counter with external clock
 # a1, not_a1, q1, not_q1, a2, not_a2, q2, not_q2, a3, not_a3, q3, not_q3
-Y0 = np.array([120] + [0]*4) # initial state
+
+Y0 = np.array([100] + [0] * 20)
 T = np.linspace(0, t_end, N) # vector of timesteps
 
 # numerical interation
-Y = odeint(xor_model, Y0, T, args=(params_ff,))
+Y = odeint(four_bit_lfsr_34, Y0, T, args=(params_ff,))
 
 Y_reshaped = np.split(Y, Y.shape[1], 1)
+print(Y_reshaped[2])
+Q1 = Y_reshaped[2]
+not_Q1 = Y_reshaped[3]
+Q2 = Y_reshaped[6]
+not_Q2 = Y_reshaped[7]
+Q3 = Y_reshaped[10]
+not_Q3 = Y_reshaped[11]
+Q4 = Y_reshaped[14]
+not_Q4 = Y_reshaped[15]
 
-# plotting the results
-X1 = Y_reshaped[0]
-X2 = Y_reshaped[2]
-Y = Y_reshaped[4]
 
-plt.plot(T, X1, label='x1')
-plt.plot(T, X2, label='x2')
-plt.plot(T, Y, label='y')
-#plt.plot(T, not_Q1, label='not q1')
-#plt.plot(T, not_Q2, label='not q2')
+# Plot offset
+# off = int(186 * N / t_end)
+# T = T[off:]
+# Q1 = Q1[off:]
+# Q2 = Q2[off:]
+# Q3 = Q3[off:]
+# Q4 = Q4[off:]
 
+plt.rcParams['figure.figsize'] = 8, 5
+
+#plt.style.use('dark_background')
+
+plt.subplot(4, 1, 1)
 plt.plot(T, get_clock(T),  '--', linewidth=2, label="CLK", color='black', alpha=0.25)
-
+plt.plot(T, Q1, label='q1', color='tab:blue')
 plt.legend()
+plt.subplot(4, 1, 2)
+plt.plot(T, get_clock(T),  '--', linewidth=2, label="CLK", color='black', alpha=0.25)
+plt.plot(T, Q2, label='q2', color='tab:orange')
+plt.legend()
+plt.subplot(4, 1, 3)
+plt.plot(T, get_clock(T),  '--', linewidth=2, label="CLK", color='black', alpha=0.25)
+plt.plot(T, Q3, label='q3', color='tab:green')
+plt.legend()
+plt.subplot(4, 1, 4)
+plt.plot(T, get_clock(T),  '--', linewidth=2, label="CLK", color='black', alpha=0.25)
+plt.plot(T, Q4, label='q4', color='tab:red')
+plt.legend()
+
+plt.subplots_adjust(0.06, 0.05, 0.94, 0.95, hspace=0.28)
 plt.show()

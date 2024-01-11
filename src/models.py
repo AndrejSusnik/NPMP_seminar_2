@@ -26,13 +26,47 @@ def ff_ode_model(Y, T, params):
 # XOR gate model
 
 
-def xor_model(Y, T, params):
-    a1, not_a1, b1, not_b1, out = Y
-    alpha1, delta1, Kd, n = params
+def xor(in1, in2, Kd, n):
+    return hybrid(in1, in2, Kd, n, Kd, n) + hybrid(in2, in1, Kd, n, Kd, n)
 
-    out = alpha1 * activate_2(a1 + b1, not_a1 + not_b1, Kd, n) - delta1 * out
+def four_bit_lfsr_34(Y, T, params_ff):
+    a1, not_a1, q1, not_q1, a2, not_a2, q2, not_q2, a3, not_a3, q3, not_q3, a4, not_a4, q4, not_q4, d1_in, d2_in, d3_in, d4_in, xor34 = Y
 
-    return np.array([a1, not_a1, b1, not_b1, out])
+    clk = get_clock(T) 
+
+
+    alpha1, alpha2, alpha3, alpha4, delta1, delta2, Kd, n = params_ff
+
+    d1 = d1_in # xor34
+    d2 = d2_in # q1
+    d3 = d3_in # q2
+    d4 = d4_in # q3
+
+    Y_FF1 = [a1, not_a1, q1, not_q1, d1, clk]
+    Y_FF2 = [a2, not_a2, q2, not_q2, d2, clk]
+    Y_FF3 = [a3, not_a3, q3, not_q3, d3, clk]
+    Y_FF4 = [a4, not_a4, q4, not_q4, d4, clk]
+
+    dY1 = ff_ode_model(Y_FF1, T, params_ff)
+    dY2 = ff_ode_model(Y_FF2, T, params_ff)
+    dY3 = ff_ode_model(Y_FF3, T, params_ff)
+    dY4 = ff_ode_model(Y_FF4, T, params_ff)
+
+
+    dY_xor34 = alpha1 * xor(q3, q4, Kd, n) - delta2 * xor34
+
+    dY_d1_in = alpha1 * activate_1(xor34, Kd, n) - delta1 * d1_in
+    dY_d2_in = alpha1 * activate_1(q1, Kd, n) - delta1 * d2_in
+    dY_d3_in = alpha1 * activate_1(q2, Kd, n) - delta1 * d3_in
+    dY_d4_in = alpha1 * activate_1(q3, Kd, n) - delta1 * d4_in
+
+    output = [dY1, dY2, dY3, dY4, dY_d1_in, dY_d2_in, dY_d3_in, dY_d4_in, dY_xor34]
+
+    dY = np.array([])
+    for out in output:
+        dY = np.append(dY, out)
+
+    return dY
 
 
 """
