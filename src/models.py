@@ -26,8 +26,12 @@ def ff_ode_model(Y, T, params):
 # XOR gate model
 
 
-def xor(in1, in2, Kd, n):
-    return hybrid(in1, in2, Kd, n, Kd, n) + hybrid(in2, in1, Kd, n, Kd, n)
+def xor(in1, in2, kd, n):
+    return hybrid(in1, in2, kd, n, kd, n) + hybrid(in2, in1, kd, n, kd, n)
+
+def xor1(in1, not_in1, in2, not_in2, kd, n):
+    return activate_2(in1 + in2, not_in1 + not_in2, kd, n)
+    return activate_2(in2, not_in1, kd, n) + activate_2(in1, not_in2, kd, n)
 
 def four_bit_lfsr_34(Y, T, params_ff):
     a1, not_a1, q1, not_q1, a2, not_a2, q2, not_q2, a3, not_a3, q3, not_q3, a4, not_a4, q4, not_q4, d1_in, d2_in, d3_in, d4_in, xor34 = Y
@@ -68,7 +72,60 @@ def four_bit_lfsr_34(Y, T, params_ff):
 
     return dY
 
+def eight_bit_lfsr(Y, T, params_ff):
+    a1, not_a1, q1, not_q1, a2, not_a2, q2, not_q2, a3, not_a3, q3, not_q3, a4, not_a4, q4, not_q4, a5, not_a5, q5, not_q5, a6, not_a6, q6, not_q6, a7, not_a7, q7, not_q7, a8, not_a8, q8, not_q8, d1_in, d2_in, d3_in, d4_in, d5_in, d6_in, d7_in, d8_in, xor82, xor83, xor84 = Y
 
+    clk = get_clock(T) 
+
+    alpha1, alpha2, alpha3, alpha4, delta1, delta2, Kd, n = params_ff
+
+    d1 = d1_in # q8
+    d2 = d2_in # q1
+    d3 = d3_in # xor82
+    d4 = d4_in # xor83
+    d5 = d5_in # xor86
+    d6 = d6_in # q5
+    d7 = d7_in # q6
+    d8 = d8_in # q7
+
+    Y_FF1 = [a1, not_a1, q1, not_q1, d1, clk]
+    Y_FF2 = [a2, not_a2, q2, not_q2, d2, clk]
+    Y_FF3 = [a3, not_a3, q3, not_q3, d3, clk]
+    Y_FF4 = [a4, not_a4, q4, not_q4, d4, clk]
+    Y_FF5 = [a5, not_a5, q5, not_q5, d5, clk]
+    Y_FF6 = [a6, not_a6, q6, not_q6, d6, clk]
+    Y_FF7 = [a7, not_a7, q7, not_q7, d7, clk]
+    Y_FF8 = [a8, not_a8, q8, not_q8, d8, clk]
+
+    dY1 = ff_ode_model(Y_FF1, T, params_ff)
+    dY2 = ff_ode_model(Y_FF2, T, params_ff)
+    dY3 = ff_ode_model(Y_FF3, T, params_ff)
+    dY4 = ff_ode_model(Y_FF4, T, params_ff)
+    dY5 = ff_ode_model(Y_FF5, T, params_ff)
+    dY6 = ff_ode_model(Y_FF6, T, params_ff)
+    dY7 = ff_ode_model(Y_FF7, T, params_ff)
+    dY8 = ff_ode_model(Y_FF8, T, params_ff)
+    
+    dY_xor82 = alpha1 * xor(q2, q8, Kd, n) - delta2 * xor82
+    dY_xor83 = alpha1 * xor(q3, q8, Kd, n) - delta2 * xor83
+    dY_xor84 = alpha1 * xor(q4, q8, Kd, n) - delta2 * xor84
+    
+    
+    dY_d1_in = alpha1 * activate_1(q8, Kd, n) - delta1 * d1_in
+    dY_d2_in = alpha1 * activate_1(q1, Kd, n) - delta1 * d2_in
+    dY_d3_in = alpha1 * activate_1(xor82, Kd, n) - delta1 * d3_in
+    dY_d4_in = alpha1 * activate_1(xor83, Kd, n) - delta1 * d4_in
+    dY_d5_in = alpha1 * activate_1(xor84, Kd, n) - delta1 * d5_in
+    dY_d6_in = alpha1 * activate_1(q5, Kd, n) - delta1 * d6_in
+    dY_d7_in = alpha1 * activate_1(q6, Kd, n) - delta1 * d7_in
+    dY_d8_in = alpha1 * activate_1(q7, Kd, n) - delta1 * d8_in
+    
+    output = [dY1, dY2, dY3, dY4, dY5, dY6, dY7, dY8, dY_d1_in, dY_d2_in, dY_d3_in, dY_d4_in, dY_d5_in, dY_d6_in, dY_d7_in, dY_d8_in, dY_xor82, dY_xor83, dY_xor84]
+
+    dY = np.array([])
+    for out in output:
+        dY = np.append(dY, out)
+    return dY
 """
 JOHSON COUNTER MODELS 
 """
